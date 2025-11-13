@@ -4,15 +4,15 @@ export const validarId = param("id", "El ID debe ser entero").isInt({ min: 1, })
 
 //Validacion para alumnos
 export const validacionesAlumno = [
-  body("nombre", "El campo nombre es obligatorio")
+  body("nombre", "El nombre es obligatorio")
     .isAlpha("es-ES", { ignore: " " }) //Permitimos espacios en el nombre
     .isLength({ min: 2, max: 100 })
     .trim(),
-  body("apellido", "El campo apellido es obligatorio")
+  body("apellido", "El apellido es obligatorio")
     .isAlpha("es-ES", { ignore: " " })
     .isLength({ min: 2, max: 100 })
     .trim(),
-  body("dni", "El campo DNI es obligatorio (entr 7 u 8 dígitos)")
+  body("dni", "El DNI es obligatorio (entr 7 u 8 dígitos)")
     .isNumeric()
     .isLength({ min: 7, max: 8 }),
 ];
@@ -29,6 +29,21 @@ export const validacionesMateria = [
     .trim(),
   body("anio", "El año debe ser un número entre 1 y 7")
     .isInt({ min: 1, max: 7 }),
+];
+
+//Validacion de notas
+export const validacionesNota = [
+  body("alumno_id", "El ID del alumno es obligatorio").isInt({ min: 1 }),
+  body("materia_id", "El ID de la materia es obligatorio").isInt({ min: 1 }),
+  body("nota1", "La Nota 1 debe ser entre 0 y 10")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 10 }),
+  body("nota2", "La Nota 2 debe ser entre 0 y 10")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 10 }),
+  body("nota3", "La Nota 3 debe ser entre 0 y 10")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 10 }),
 ];
 
 //Middleware verifaciones

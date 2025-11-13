@@ -3,8 +3,8 @@ import cors from "cors";
 import { conectarDB } from "./db.js";
 import authRouter, { authConfig } from "./auth.js";
 import alumnosRouter from "./alumnos.js";
-import materiasRouter from "./materias.js"; // <-- La nueva línea de import
-
+import materiasRouter from "./materias.js"; 
+import notasRouter from "./notas.js";
 
 conectarDB();
 
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 app.use("/alumnos", alumnosRouter);
 app.use("/auth", authRouter);
 app.use("/materias", materiasRouter);
+app.use("/notas", notasRouter);
 
 app.listen(port, () => {
   console.log(`La aplicación esta funcionando en el puerto ${port}`);
