@@ -19,8 +19,6 @@ export function authConfig() {
   // Creo estrategia jwt
   passport.use(
     new Strategy(jwtOptions, async (payload, next) => {
-      // Si llegamos a este punto es porque el token es valido
-      // Si hace falta realizar algun paso extra antes de llamar al handler de la API
       next(null, {
         userId: payload.userId,
         nombre: payload.nombre,
@@ -52,7 +50,7 @@ router.post(
 
     //Consultar por el usuario a la base de datos
     const [usuarios] = await db.execute(
-      "SELECT * FROM usuarios WHERE email = ?",
+      "SELECT * FROM Usuario WHERE email = ?",
       [email]
     );
 
@@ -90,7 +88,7 @@ router.post(
 
 // -- Ruta De Registro
 router.post(
-  "/resgitro",
+  "/registro",
   //Validamos el registro
   body("nombre", "El nombre es obligatorio").isAlpha("es-ES").isLength({ max: 50}),
   body("email", "El email es invalido").isEmail(),
@@ -109,11 +107,11 @@ router.post(
     try {
         //Verificamos el mail ya existe
         const [existentes] = await db.execute(
-            "SELECT * FROM Usuarios WHERE email = ?",
+            "SELECT * FROM Usuario WHERE email = ?",
             [email]
         );
 
-        if (existentes.lenght > 0) {
+        if (existentes.length > 0) {
             return res
                 .status(400)
                 .json({ success: false, message: "El email ya existe" });
@@ -124,7 +122,7 @@ router.post(
         
         //Insertamos la BD
         const [result] = await db.execute(
-            "INSERT INTO Usuarios (nombre, email, password) VALUES (?, ?, ?)",
+            "INSERT INTO Usuario (nombre, email, password) VALUES (?, ?, ?)",
             [nombre, email, hashedPassword]
         );
 

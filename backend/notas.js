@@ -1,13 +1,13 @@
 import express from "express";
 import { db } from "./db.js";
-import { verificarValidaciones, validacionesNotas } from "./validaciones.js";
+import { verificarValidaciones, validacionesNota } from "./validaciones.js";
 import { verificarAutenticacion } from "./auth.js";
-import { validarId } from ".validaciones.js";
+import { validarId } from "./validaciones.js";
 
 const router = express.Router();
 
 //Obtenemos el listado de las notas con los alumnos y las materias
-router.get("/", verificarAutenticacion, async (requestAnimationFrame, res) => {
+router.get("/", verificarAutenticacion, async (req, res) => {
     //Calculamos el promedio en las SQL
     const [rows] = await db.execute(`
         SELECT
@@ -39,7 +39,7 @@ router.get("/", verificarAutenticacion, async (requestAnimationFrame, res) => {
 });
 
 //Cargamos o modificamos las notas
-router.post("/", verificarAutenticacion, validacionesNotas,
+router.post("/", verificarAutenticacion, validacionesNota,
     verificarValidaciones, async (req, res) => {
         const {alumno_id, materia_id, nota1, nota2, nota3 } = req.body;
 
@@ -81,7 +81,7 @@ router.post("/", verificarAutenticacion, validacionesNotas,
 );
 
 //obtenemos todas las notas de un alumno
-router.get("/", verificarAutenticacion, validacionesNotas,
+router.get("/", verificarAutenticacion, validacionesNota,
     verificarValidaciones, async (req, res) => {
         const alumno_id = Number (req.params.id);
 

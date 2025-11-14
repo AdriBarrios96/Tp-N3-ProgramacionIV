@@ -7,7 +7,9 @@ const router = express.Router();
 
 //Obtenemos los alumnos
 router.get("/", verificarAutenticacion, async (req, res) => {
-  const [rows] = await db.execute("SELECT * FROM Alumno");
+  const { userId } = req.user;
+  const [rows] = await db.execute("SELECT * FROM Alumno WHERE usuario_id = ?", [userId]);
+  
   res.json({
     success: true,
     alumnos: rows,
@@ -21,8 +23,9 @@ router.get(
   validarId,
   verificarValidaciones,
   async (req, res) => {
+    const { userId } = req.user;
     const id = Number(req.params.id);
-    const [rows] = await db.execute("SELECT * FROM Alumno WHERE id = ?", [id] );
+    const [rows] = await db.execute("SELECT * FROM Alumno WHERE id = ? AND usuario_id = ?", [id, userId]);
 
     if (rows.length === 0) {
       return res
@@ -41,25 +44,13 @@ router.post(
   validacionesAlumno,
   verificarValidaciones,
   async (req, res) => {
+    const { userId } = req.user;
     const { nombre, apellido, dni, } = req.body;
 
     try {
-        //Verificamos el DNI
-        const [existentes] = await db.execute(
-            "SELECT * FROM Alumno WHERE dni = ?",
-            [dni]
-        );
-
-        if (existentes.length > 0) {
-            return res
-                .status(400)
-                .json({ success: false, message: "El DNI ya esta registrado" });
-        }
-
-        //Insertamos un nuevo alumno
         const [result] = await db.execute(
-            "INSERT INTO Alumno (nombre, apellido, dni) VALUES (?,?,?,?)",
-            [nombre, apellido, dni ]
+            "INSERT INTO Alumno (nombre, apellido, dni, usuario_id) VALUES (?, ?, ?, ?)",
+            [nombre, apellido, dni, userId]
         );
 
         res.status(201).json({
@@ -89,34 +80,29 @@ router.put(
   validacionesAlumno,
   verificarValidaciones,
   async (req, res) => {
+    const { userId } = req.user;
     const id = Number(req.params.id);
     const { nombre, apellido, dni } = req.body;
 
     try {
       //Verificar que el alumno exista
-      const [rows] = await db.execute("SELECT * FROM Alumno WHERE id = ?", [id]);
-      if (rows.length === 0) {
+      const [dniExistente] = await db.execute("SELECT * FROM Alumno WHERE dni = ? AND id != ? AND usuario_id = ?", [dni, id, userId]);
+      if (dniExistente.length > 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "El DNI ya pertenece a otro alumno" });
+      }
+
+      //Verificamos si el DNI esta ligado a otro alumno
+      const [result] = await db.execute("UPDATE Alumno SET nombre = ?, apellido = ?, dni = ? WHERE id = ? AND usuario_id",
+        [nombre, apellido, dni, id, userId]
+      );
+
+      if (result.affectedRows === 0) {
         return res
           .status(404)
           .json({ success: false, message: "Alumno no encontrado" });
       }
-
-      //Verificamos si el DNI esta ligado a otro alumno
-      const [dniExistente] = await db.execute(
-        "SELECT * FROM Alumno WHERE dni = ? AND id != ?",
-        [dni, id]
-      );
-      if (dniExistente.length > 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: "DNI ya existente en otro alumno" });
-      }
-
-      //Actualizamos alumno
-      await db.execute(
-        "UPDATE Alumno SET nombre = ?, apellido = ?, dni = ? WHERE id = ?",
-        [nombre, apellido, dni, id]
-      );
 
       res.json({
         success: true,
@@ -124,14 +110,14 @@ router.put(
       });
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY") {
-        return res
-          .status(400)
-          .json({ success: false, message: "DNI ya existente en otro alumno" });
+        return res.status(400).json({ 
+            success: false, 
+            message: "DNI ya existente en otro alumno" });
       }
       console.error("Error al modificar alumno:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Error del servidor" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error del servidor" });
     }
   }
 );
@@ -143,17 +129,18 @@ router.delete(
   validarId,
   verificarValidaciones,
   async (req, res) => {
+    const { userId } = req.user;
     const id = Number(req.params.id);
 
     //verificamos si existe o no el alumno antes de borrarlo
-    const [rows] = await db.execute("SELECT * FROM Alumno WHERE id = ?", [id]);
-    if (rows.length === 0) {
+    const [result] = await db.execute("SELECT * FROM Alumno WHERE id = ? AND usuario_id = ?", [id, userId]);
+
+    if (result.affectedRows === 0) {
         return res
-            .status(400)
-            .json({ success: false, message: "Alumno no encontrado" });
+          .status(404)
+          .json({ success: false, message: "Alumno no encontrado" });
     }
     
-    await db.execute("DELETE FROM Alumno WHERE id=?", [id]);
     res.json({ success: true, data: id });
   }
 );

@@ -14,7 +14,7 @@ router.get("/", verificarAutenticacion, async (req, res) => {
   });
 });
 
-//Obtener un alumno por ID
+//Obtener una materia por ID
 router.get(
 "/:id",
   verificarAutenticacion,
@@ -38,34 +38,22 @@ router.get(
 router.post(
   "/",
   verificarAutenticacion,
-  validacionAlumno,
+  validacionesMateria,
   verificarValidaciones,
   async (req, res) => {
     const { nombre, codigo, anio, } = req.body;
 
     try {
         //Verificamos el codigo
-        const [existentes] = await db.execute(
-            "SELECT * FROM Materia WHERE dni = ?",
-            [codigo]
-        );
-
-        if (existentes.length > 0) {
-            return res
-                .status(400)
-                .json({ success: false, message: "El codigo de la materia ya existe" });
-        }
-
-        //Insertamos una nueva materia
         const [result] = await db.execute(
-            "INSERT INTO Materia (nombre, codigo, anio) VALUES (?,?,?,?)",
-            [nombre, codigo, anio ]
+            "INSERT INTO Materia (nombre, codigo, anio) VALUES (?, ?, ?)",
+            [nombre, codigo, anio]
         );
 
         res.status(201).json({
-            success: true,
             data: { id: result.insertId, nombre, codigo, anio },
         });
+
     } catch (error) {
         //Manejo de errores
         if (error.code === "ER_DUP_ENTRY") {
@@ -75,7 +63,7 @@ router.post(
         }
         console.error("Error al crear Materia.", error);
         res
-            .status(400)
+            .status(500)
             .json({success: false, message: "Error del servidor" });
     }
   }
@@ -86,7 +74,7 @@ router.put(
   "/:id",
   verificarAutenticacion,
   validarId,
-  validacionesAlumno,
+  validacionesMateria,
   verificarValidaciones,
   async (req, res) => {
     const id = Number(req.params.id);
@@ -94,30 +82,28 @@ router.put(
 
     try {
       //Verificar que la materia exista
-      const [rows] = await db.execute("SELECT * FROM Materia WHERE id = ?", [id]);
-      if (rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Materia no encontrada" });
-      }
-
-      //Verificamos si el codigo esta ligado a otra materia
-      const [dniExistente] = await db.execute(
-        "SELECT * FROM Materia WHERE dni = ? AND id != ?",
+      const [codigoExistente] = await db.execute("SELECT * FROM Materia WHERE codigo = ? AND id != ?",
         [codigo, id]
       );
+
       if (codigoExistente.length > 0) {
         return res.status(400).json({ 
             success: false, 
             message: "codigo ya existente en otra materia" 
         });
       }
-
+        
       //Actualizamos
-      await db.execute(
+        const [result] = await db.execute(
         "UPDATE Materia SET nombre = ?, codigo = ?, anio = ? WHERE id = ?",
         [nombre, codigo, anio, id]
       );
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Materia no encontrada" });
+      }
 
       res.json({
         success: true,
@@ -146,16 +132,30 @@ router.delete(
   async (req, res) => {
     const id = Number(req.params.id);
 
-    //verificamos si existe o no la materia antes de borrarla
-    const [rows] = await db.execute("SELECT * FROM Materia WHERE id = ?", [id]);
-    if (rows.length === 0) {
+    try {
+      const [result] = await db.execute("DELETE FROM Materia WHERE id = ?", 
+        [id]
+    );
+
+      if (result.affectedRows === 0) {
         return res
-            .status(400)
-            .json({ success: false, message: "Materia no encontrado" });
+          .status(404)
+          .json({ success: false, message: "Materia no encontrada" });
+      }
+
+      res.json({ success: true, data: { id } });
+    } catch (error) {
+      //Error si la materia está en uso
+      if (error.code === "ER_ROW_IS_REFERENCED_2") {
+        return res.status(400).json({success: false,
+          message:"No se puede borrar la materia, ya tiene notas asociadas.",
+        });
+      }
+      console.error("Error al borrar Materia:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error interno del servidor" });
     }
-    
-    await db.execute("DELETE FROM Materia WHERE id=?", [id]);
-    res.json({ success: true, data: id });
   }
 );
 

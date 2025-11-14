@@ -1,0 +1,96 @@
+# Variable para el host
+@host = http://localhost:3000
+
+###AUTENTICACIÓN
+
+# @name register
+### (1.1) Registrar un nuevo usuario
+POST {{host}}/auth/registro
+Content-Type: application/json
+
+{
+  "nombre": "Adriel",
+  "email": "adri@prueba.com",
+  "password": "Password123"
+}
+
+
+### (1.2) Iniciar sesión con ese usuario
+### Esto guarda el token en una variable @token
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "adri@prueba.com",
+  "password": "Password123"
+}
+
+###
+@token = {{login.response.body.token}}
+
+
+###ALUMNOS (Rutas Protegidas)
+
+
+
+###Crear un Alumno
+POST {{host}}/alumnos
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Juan",
+  "apellido": "Perez",
+  "dni": "12345678"
+}
+
+
+
+###Obtener listado de Alumnos
+GET {{host}}/alumnos
+Authorization: Bearer {{token}}
+
+#MATERIAS
+
+###Crear una Materia
+POST {{host}}/materias
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Programación IV",
+  "codigo": "PRG-IV",
+  "anio": 4
+}
+
+
+###Obtenemos el listado de Materias
+GET {{host}}/materias
+Authorization: Bearer {{token}}
+
+
+#NOTAS
+
+###Cargar/Actualizar Notas
+###Solo con ID que existan en la BD 
+POST {{host}}/notas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "alumno_id": 1,
+  "materia_id": 1,
+  "nota1": 8.5,
+  "nota2": 7,
+  "nota3": 10
+}
+
+
+###Obtener el listado de TODAS las notas
+GET {{host}}/notas
+Authorization: Bearer {{token}}
+
+###Obtener notas de UN alumno
+GET {{host}}/notas/alumno/1
+Authorization: Bearer {{token}}
