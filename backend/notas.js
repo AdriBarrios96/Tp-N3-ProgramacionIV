@@ -21,7 +21,7 @@ router.get("/", verificarAutenticacion, async (req, res) => {
             n.nota1,
             n.nota2,
             n.nota3,
-            INFULL(
+            IFNULL(
                 (COALESCE(n.nota1, 0) + COALESCE(n.nota2, 0) + COALESCE(n.nota3, 0)) / 
                 ( (CASE WHEN n.nota1 IS NOT NULL THEN 1 ELSE 0 END) +
                     (CASE WHEN n.nota2 IS NOT NULL THEN 1 ELSE 0 END) +
@@ -44,10 +44,6 @@ router.post("/", verificarAutenticacion, validacionesNota,
         const {alumno_id, materia_id, nota1, nota2, nota3 } = req.body;
 
         try {
-            //el "INSERT ... ON DUPLICATE KEY UPDATE" funciona para
-            //ver si existe o no la combinacion entre alumno_id y materia_id
-            //si existe, hace el UPDATE con los nuevos valores. Si no existe
-            //hace un INSERT.
             const [result] = await db.execute(
                 `
                 INSERT INTO Nota (alumno_id, materia_id, nota1, nota2, nota3) 
@@ -81,8 +77,7 @@ router.post("/", verificarAutenticacion, validacionesNota,
 );
 
 //obtenemos todas las notas de un alumno
-router.get("/", verificarAutenticacion, validacionesNota,
-    verificarValidaciones, async (req, res) => {
+router.get("/:id", verificarAutenticacion, validarId, async (req, res) => {
         const alumno_id = Number (req.params.id);
 
         //Verificamos si el alumno existe
