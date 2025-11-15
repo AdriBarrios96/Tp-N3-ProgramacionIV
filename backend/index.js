@@ -6,29 +6,33 @@ import alumnosRouter from "./alumnos.js";
 import materiasRouter from "./materias.js"; 
 import notasRouter from "./notas.js";
 
-conectarDB();
+  
+async function startServer() {
+  conectarDB();
 
-const app = express();
-const port = 3000;
+  const app = express();
+  const port = 3000;
 
-// Para interpretar body como JSON
-app.use(express.json());
+  // Para interpretar body como JSON
+  app.use(express.json());
 
-// Habilito CORS
-app.use(cors());
+  // Habilito CORS
+  app.use(cors());
 
-authConfig();
+  authConfig();
 
-app.get("/", (req, res) => {
-  // Responder con string
-  res.send("API de gestion de alumnos y notas");
-});
+  app.get("/", (req, res) => {
+    // Responder con string
+    res.send("API de gestion de alumnos y notas");
+  });
 
-app.use("/alumnos", alumnosRouter);
-app.use("/auth", authRouter);
-app.use("/materias", materiasRouter);
-app.use("/notas", notasRouter);
+  app.use("/alumnos", alumnosRouter);
+  app.use("/auth", authRouter);
+  app.use("/materias", materiasRouter);
+  app.use("/notas", notasRouter);
 
-app.listen(port, () => {
-  console.log(`La aplicación esta funcionando en el puerto ${port}`);
-});
+  app.listen(port, () => {
+    console.log(`La aplicación esta funcionando en el puerto ${port}`);
+  });
+}
+startServer();

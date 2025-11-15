@@ -94,7 +94,7 @@ router.put(
       }
 
       //Verificamos si el DNI esta ligado a otro alumno
-      const [result] = await db.execute("UPDATE Alumno SET nombre = ?, apellido = ?, dni = ? WHERE id = ? AND usuario_id",
+      const [result] = await db.execute("UPDATE Alumno SET nombre = ?, apellido = ?, dni = ? WHERE id = ? AND usuario_id = ?",
         [nombre, apellido, dni, id, userId]
       );
 
@@ -135,13 +135,23 @@ router.delete(
     //verificamos si existe o no el alumno antes de borrarlo
     const [result] = await db.execute("SELECT * FROM Alumno WHERE id = ? AND usuario_id = ?", [id, userId]);
 
-    if (result.affectedRows === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Alumno no encontrado" });
-    }
+    try {
+      const [result] = await db.execute(
+        "DELETE FROM Alumno WHERE id = ? AND usuario_id = ?",
+        [id, userId]
+      );
     
-    res.json({ success: true, data: id });
+      if (result.affectedRows === 0) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Alumno no encontrado" });
+      }
+      res.json({ success: true, data:{ id }});
+    } catch (error) {
+      console.error("Error al borrar Alumno:", error);
+      res.status(500).json({
+        sucess: false, message: "Error interno del servidor"});
+    }
   }
 );
 
